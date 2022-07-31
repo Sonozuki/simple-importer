@@ -1,0 +1,20 @@
+{
+    "name": "simple-importer",
+    "title": "Simple Importer",
+    "description": "A simple data importer.",
+    "author": "Sonozuki",
+    "url": "https://github.com/Sonozuki/simple-importer",
+    "scripts": [
+        "scripts/simple-importer.js"
+    ],
+    "languages": [
+        {
+            "lang": "en",
+            "name": "English",
+            "path": "languages/en.json"
+        }
+    ],
+    "version": "1.0.0",
+    "minimumCoreVersion": "9",
+    "compatibleCoreVersion": "9"
+}
