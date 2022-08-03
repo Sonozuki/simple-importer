@@ -19,6 +19,13 @@ Hooks.on('changeSidebarTab', (directory) => {
 Hooks.on('init', () => SimpleImporter.initialise());
 
 /**
+ * A journal entry.
+ * @typedef {Object} JournalEntry
+ * @property {string} name - The name of the journal entry.
+ * @property {string} content - The content of the journal entry.
+ */
+
+/**
  * Represents the simple-importer module.
  */
 class SimpleImporter {
@@ -70,7 +77,7 @@ class ImportJournalDataConfig extends FormApplication {
     activateListeners(html) {
         super.activateListeners(html);
 
-        html.on('click', '#import-button', this._handleImportButtonClick);
+        html.on('click', '#import-button', this._handleImportButtonClick.bind(this));
     }
 
     /**
@@ -79,21 +86,56 @@ class ImportJournalDataConfig extends FormApplication {
      */
     async _handleImportButtonClick(event) {
         // ensure data was supplied
-        const importData = $(this).siblings('textarea').val();
+        const importData = $(event.currentTarget).siblings('textarea').val();
         if (!importData)
             return;
 
         // ensure the data is valid json
-        let object;
+        let input;
         try {
-            object = JSON.parse(importData);
+            input = JSON.parse(importData);
         }
         catch (exception) {
-            ui.notifications.error('Failed to parse JSON, error printed in console.')
+            ui.notifications.error('Failed to parse JSON, error printed in console.');
             console.error(SimpleImporter.MODULE_ID, '|', exception);
             return;
         }
 
-        console.log(object);
+        // validate journal entries
+        let entriesValid = true;
+        if (Array.isArray(input)) {
+            if (input.length == 0) {
+                ui.notifications.error('Array contains no entries.')
+                entriesValid = false;
+            }
+
+            for (let entry of input)
+                if (!this.validateEntry(entry))
+                    entriesValid = false;
+        }
+        else
+            if (!this.validateEntry(input))
+                entriesValid = false;
+
+        if (!entriesValid) {
+            ui.notifications.error('Aborting import, fix issues and try again.');
+            return;
+        }
+    
+        // import journal entries
+        console.log('importing');
+    }
+
+    /**
+     * Checks to see whether a journal entry is valid.
+     * @param {JournalEntry} entry The journal entry to ensure is valid.
+     * @returns true, if the entry is valid; otherwise, false.
+     */
+    validateEntry(entry) {
+        const isValid = entry.name && entry.content && entry.name != '' && entry.content != '';
+        if (!isValid)
+            ui.notifications.error(`Entry: "${JSON.stringify(entry)}" is invalid (must have populated "name" and "content" fields).`);
+
+        return isValid;
     }
 }
