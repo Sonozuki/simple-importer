@@ -95,7 +95,8 @@ class ImportJournalDataConfig extends FormApplication {
 
         // validate journal entries
         let entriesValid = true;
-        if (Array.isArray(input)) {
+        const isArray = Array.isArray(input);
+        if (isArray) {
             if (input.length == 0) {
                 ui.notifications.error('Array contains no entries.')
                 entriesValid = false;
@@ -115,7 +116,13 @@ class ImportJournalDataConfig extends FormApplication {
         }
     
         // import journal entries
-        console.log('importing');
+        if (isArray)
+            for (let entry of input)
+                await JournalEntry.create(entry);
+        else
+            await JournalEntry.create(input);
+
+        ui.notifications.info('Journal entries successfully created.');
     }
 
     /**
