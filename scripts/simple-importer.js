@@ -116,6 +116,7 @@ class ImportJournalDataConfig extends FormApplication {
             await JournalEntry.create(input);
 
         ui.notifications.info('Journal entries successfully created.');
+        await SimpleImporter.importJournalDataConfig.close();
     }
 
     /**
