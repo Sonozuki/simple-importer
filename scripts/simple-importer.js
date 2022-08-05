@@ -49,6 +49,70 @@ class SimpleImporter {
 }
 
 /**
+ * Represents the simple-importer utilities.
+ */
+class SimpleImporterUtilities {
+    /**
+     * Tries to parse a json string to a json blob. If the string is unable to be parsed, a notification is created and the error is printed.
+     * @param {String} jsonString The json string to try and parse.
+     * @returns The parsed object, if it could be parsed; otherwise, undefined.
+     */
+    static parseJson(jsonString) {
+        try {
+            return JSON.parse(jsonString);
+        }
+        catch (exception) {
+            ui.notifications.error('Failed to parse JSON, error printed in console.');
+            console.error(SimpleImporter.MODULE_ID, '|', exception);
+        }
+    }
+
+    /**
+     * Checks if an object is valid using a custom predicate.
+     * @param {*} object The object to validate. This can either be an object or an array of objects.
+     * @param {*} isObjectValidPredicate A function returning a bool used to check if an object is valid.
+     * @returns true, if the object is valid; otherwise, false.
+     */
+    static validateImportedObject(object, isObjectValidPredicate) {
+        let entriesValid = true;
+
+        const isArray = Array.isArray(object);
+        if (isArray) {
+            if (object.length === 0) {
+                ui.notifications.error('Array contains no entries.')
+                entriesValid = false;
+            }
+
+            for (let entry of object)
+                if (!isObjectValidPredicate(entry))
+                    entriesValid = false;
+        }
+        else
+            if (!isObjectValidPredicate(object))
+                entriesValid = false;
+
+        if (!entriesValid)
+            ui.notifications.error('Aborting import, fix issues and try again.');
+
+        return entriesValid;
+    }
+
+    /**
+     * Imports an object using a custom import function.
+     * @param {*} object The object to import. This can either be an object or an array of objects.
+     * @param {*} importObjectAction A function used to import an object.
+     */
+    static async importObject(object, importObjectAction) {
+        const isArray = Array.isArray(object);
+        if (isArray)
+            for (let entry of object)
+                await importObjectAction(entry);
+        else
+            await importObjectAction(object);
+    }
+}
+
+/**
  * The form for importing journal data.
  */
 class ImportJournalDataConfig extends FormApplication {
@@ -87,44 +151,16 @@ class ImportJournalDataConfig extends FormApplication {
             return;
 
         // ensure the data is valid json
-        let input;
-        try {
-            input = JSON.parse(importData);
-        }
-        catch (exception) {
-            ui.notifications.error('Failed to parse JSON, error printed in console.');
-            console.error(SimpleImporter.MODULE_ID, '|', exception);
+        let input = SimpleImporterUtilities.parseJson(importData);
+        if (!input)
             return;
-        }
 
         // validate journal entries
-        let entriesValid = true;
-        const isArray = Array.isArray(input);
-        if (isArray) {
-            if (input.length == 0) {
-                ui.notifications.error('Array contains no entries.')
-                entriesValid = false;
-            }
-
-            for (let entry of input)
-                if (!this.validateEntry(entry))
-                    entriesValid = false;
-        }
-        else
-            if (!this.validateEntry(input))
-                entriesValid = false;
-
-        if (!entriesValid) {
-            ui.notifications.error('Aborting import, fix issues and try again.');
+        if (!SimpleImporterUtilities.validateImportedObject(input, this.validateEntry))
             return;
-        }
-    
+
         // import journal entries
-        if (isArray)
-            for (let entry of input)
-                await JournalEntry.create(entry);
-        else
-            await JournalEntry.create(input);
+        await SimpleImporterUtilities.importObject(input, (object) => JournalEntry.create(object));
 
         ui.notifications.info('Journal entries successfully created.');
         await SimpleImporter.importJournalDataConfig.close();
