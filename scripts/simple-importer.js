@@ -70,10 +70,9 @@ class SimpleImporterUtilities {
     /**
      * Checks if an object is valid using a custom predicate.
      * @param {*} object The object to validate. This can either be an object or an array of objects.
-     * @param {*} isObjectValidPredicate A function returning a bool used to check if an object is valid.
      * @returns true, if the object is valid; otherwise, false.
      */
-    static validateImportedObject(object, isObjectValidPredicate) {
+    static validateImportedObject(object) {
         let entriesValid = true;
 
         const isArray = Array.isArray(object);
@@ -84,11 +83,11 @@ class SimpleImporterUtilities {
             }
 
             for (let entry of object)
-                if (!isObjectValidPredicate(entry))
+                if (!this.validateObject(entry))
                     entriesValid = false;
         }
         else
-            if (!isObjectValidPredicate(object))
+            if (!this.validateObject(object))
                 entriesValid = false;
 
         if (!entriesValid)
@@ -109,6 +108,19 @@ class SimpleImporterUtilities {
                 await importObjectAction(entry);
         else
             await importObjectAction(object);
+    }
+
+    /**
+     * Checks to see whether a journal entry or rollable table is valid.
+     * @param {JournalEntryData|RollTableData} object The journal entry or rollable table to ensure is valid.
+     * @returns true, if the object is valid; otherwise, false.
+     */
+    static validateObject(object) {
+        const isValid = object.name && /\S/.test(object.name);
+        if (!isValid)
+            ui.notifications.error(`Object: "${JSON.stringify(object)}" is invalid (must have populated "name" field).`);
+
+        return isValid;
     }
 }
 
@@ -156,27 +168,14 @@ class ImportJournalDataConfig extends FormApplication {
             return;
 
         // validate journal entries
-        if (!SimpleImporterUtilities.validateImportedObject(input, this.validateEntry))
+        if (!SimpleImporterUtilities.validateImportedObject(input))
             return;
 
         // import journal entries
-        await SimpleImporterUtilities.importObject(input, (object) => JournalEntry.create(object));
+        await SimpleImporterUtilities.importObject(input, async (object) => await JournalEntry.create(object));
 
         ui.notifications.info('Journal entries successfully created.');
         await SimpleImporter.importJournalDataConfig.close();
-    }
-
-    /**
-     * Checks to see whether a journal entry is valid.
-     * @param {JournalEntryData} entry The journal entry to ensure is valid.
-     * @returns true, if the entry is valid; otherwise, false.
-     */
-    validateEntry(entry) {
-        const isValid = entry.name && /\S/.test(entry.name);
-        if (!isValid)
-            ui.notifications.error(`Entry: "${JSON.stringify(entry)}" is invalid (must have populated "name" field).`);
-
-        return isValid;
     }
 }
 
@@ -213,5 +212,24 @@ class ImportRollableTableDataConfig extends FormApplication {
      * @param {*} event The event data.
      */
     async _handleImportButtonClick(event) {
+        // ensure data was supplied
+        const importData = $(event.currentTarget).siblings('textarea').val();
+        if (!importData)
+            return;
+
+        // ensure the data is valid json
+        let input = SimpleImporterUtilities.parseJson(importData);
+        if (!input)
+            return;
+
+        // validate tables
+        if (!SimpleImporterUtilities.validateImportedObject(input))
+            return;
+
+        // import tables
+        await SimpleImporterUtilities.importObject(input, async (object) => await RollTable.create(object));
+
+        ui.notifications.info('Rollable tables successfully created.');
+        await SimpleImporter.importRollableTableDataConfig.close();
     }
 }
