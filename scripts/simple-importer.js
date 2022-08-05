@@ -26,7 +26,7 @@ class SimpleImporter {
         /**
          * The template for ImportJournalDataConfig.
          */
-        JOURNAL_DATA_IMPORT: `modules/${this.MODULE_ID}/templates/journal-data-import.hbs`
+        DATA_IMPORT: `modules/${this.MODULE_ID}/templates/data-import.hbs`
     }
 
     /**
@@ -48,7 +48,7 @@ class ImportJournalDataConfig extends FormApplication {
         let overrides = {
             height: 'auto',
             id: 'import-journal-data',
-            template: SimpleImporter.TEMPLATES.JOURNAL_DATA_IMPORT,
+            template: SimpleImporter.TEMPLATES.DATA_IMPORT,
             title: 'Import Journal Data'
         };
 
