@@ -1,9 +1,9 @@
 Hooks.on('renderJournalDirectory', (directory, html) => {
     // add custom button
     let actionButtonsHeaderRow = html.find('div.header-actions');
-    actionButtonsHeaderRow.append(`<button id="import-data"><i class="fas fa-book"></i> Import Journal Data</button>`);
+    actionButtonsHeaderRow.append(`<button id="import-journal-data-button"><i class="fas fa-book"></i> Import Journal Data</button>`);
 
-    html.on('click', '#import-data', (event) => {
+    html.on('click', '#import-journal-data-button', (event) => {
         SimpleImporter.importJournalDataConfig.render(true);
     });
 });
