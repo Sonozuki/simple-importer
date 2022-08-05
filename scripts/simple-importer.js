@@ -11,13 +11,6 @@ Hooks.on('renderJournalDirectory', (directory, html) => {
 Hooks.on('init', () => SimpleImporter.initialise());
 
 /**
- * A journal entry.
- * @typedef {Object} JournalEntry
- * @property {string} name - The name of the journal entry.
- * @property {string} content - The content of the journal entry.
- */
-
-/**
  * Represents the simple-importer module.
  */
 class SimpleImporter {
@@ -127,13 +120,13 @@ class ImportJournalDataConfig extends FormApplication {
 
     /**
      * Checks to see whether a journal entry is valid.
-     * @param {JournalEntry} entry The journal entry to ensure is valid.
+     * @param {JournalEntryData} entry The journal entry to ensure is valid.
      * @returns true, if the entry is valid; otherwise, false.
      */
     validateEntry(entry) {
-        const isValid = entry.name && entry.content && entry.name != '' && entry.content != '';
+        const isValid = entry.name && /\S/.test(entry.name);
         if (!isValid)
-            ui.notifications.error(`Entry: "${JSON.stringify(entry)}" is invalid (must have populated "name" and "content" fields).`);
+            ui.notifications.error(`Entry: "${JSON.stringify(entry)}" is invalid (must have populated "name" field).`);
 
         return isValid;
     }
