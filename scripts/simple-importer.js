@@ -8,6 +8,16 @@ Hooks.on('renderJournalDirectory', (directory, html) => {
     });
 });
 
+Hooks.on('renderRollTableDirectory', (directory, html) => {
+    // add custom button
+    let actionButtonsHeaderRow = html.find('div.header-actions');
+    actionButtonsHeaderRow.append(`<button id="import-table-data-button"><i class="fas fa-book"></i> Import Rollable Table Data</button>`);
+
+    html.on('click', '#import-table-data-button', (event) => {
+        SimpleImporter.importRollableTableDataConfig.render(true);
+    });
+});
+
 Hooks.on('init', () => SimpleImporter.initialise());
 
 /**
@@ -34,6 +44,7 @@ class SimpleImporter {
      */
     static initialise() {
         this.importJournalDataConfig = new ImportJournalDataConfig();
+        this.importRollableTableDataConfig = new ImportRollableTableDataConfig();
     }
 }
 
@@ -130,5 +141,41 @@ class ImportJournalDataConfig extends FormApplication {
             ui.notifications.error(`Entry: "${JSON.stringify(entry)}" is invalid (must have populated "name" field).`);
 
         return isValid;
+    }
+}
+
+/**
+ * The form for importing rollable table data.
+ */
+class ImportRollableTableDataConfig extends FormApplication {
+    /**
+     * Retrieves the default options for the form.
+     */
+    static get defaultOptions() {
+        let overrides = {
+            height: 'auto',
+            id: 'import-table-data',
+            template: SimpleImporter.TEMPLATES.DATA_IMPORT,
+            title: 'Import Rollable Table Data'
+        };
+
+        return foundry.utils.mergeObject(super.defaultOptions, overrides);
+    }
+
+    /**
+     * Subscribes event handlers for the form.
+     * @param {*} html The html of the form.
+     */
+    activateListeners(html) {
+        super.activateListeners(html);
+
+        html.on('click', '#import-button', this._handleImportButtonClick.bind(this));
+    }
+
+    /**
+     * Invoked when the import button is clicked.
+     * @param {*} event The event data.
+     */
+    async _handleImportButtonClick(event) {
     }
 }
